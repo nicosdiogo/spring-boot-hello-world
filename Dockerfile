@@ -1,9 +1,17 @@
-FROM openjdk:8-jdk-alpine
-VOLUME /tmp
+FROM maven:3.8.4-jdk-8 AS build
 
-ARG JAR_FILE
-ADD target/spring-boot-hello-world-1.0.0-SNAPSHOT.jar app.jar
+COPY src /app/src
+COPY pom.xml /app
 
-ENV JAR_OPTS=""
-ENV JAVA_OPTS=""
-ENTRYPOINT exec java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar $JAR_OPTS
+WORKDIR /app
+RUN mvn clean install
+
+FROM eclipse-temurin:8-jre
+
+COPY --from=build /app/target/*.jar /app/app.jar
+
+WORKDIR /app
+
+EXPOSE 8080
+
+CMD ["java", "-jar", "app.jar"]
